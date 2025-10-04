@@ -31,16 +31,27 @@
             margin-top: 0; 
         }
         h2 { font-size: 1.5em; }
-        pre { 
-            white-space: pre-wrap; 
-            word-wrap: break-word; 
-            background-color: #f8f9fa; 
-            padding: 15px; 
-            border-radius: 5px; 
-            font-size: 14px; 
-            border: 1px solid #dee2e6; 
-        }
         .error { color: #d93025; font-weight: bold; }
+
+        /* --- YENİ KULLANICI BİLGİLERİ ALANI --- */
+        #userInfoContainer p {
+            font-size: 1.1em;
+            margin: 12px 0;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        #userInfoContainer strong {
+            min-width: 200px;
+            color: #555;
+        }
+        #userInfoContainer code {
+            background-color: #eef2f7;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            font-family: monospace;
+            word-break: break-all;
+        }
 
         /* --- KATEGORİ VE KART TASARIMI --- */
         .category-grid {
@@ -98,13 +109,25 @@
             border-top: none;
             border-radius: 0 0 5px 5px;
         }
+        .accordion-content pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-size: 14px; 
+            border: 1px solid #dee2e6;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-            <h1>Gönderilen Orijinal Mesaj</h1>
-            <pre id="originalMessageContent">Yükleniyor...</pre>
+            <h1>Kullanıcı Bilgileri</h1>
+            <div id="userInfoContainer">
+                <p class="error">Yükleniyor...</p>
+            </div>
         </div>
 
         <div class="card" id="allMessagesContainer">
@@ -121,16 +144,34 @@
                 if (!hash) throw new Error('Veri bulunamadı.');
 
                 const decodedData = JSON.parse(decodeURIComponent(escape(window.atob(hash))));
-                const { originalMessage, userData } = decodedData;
+                const { userData } = decodedData;
 
-                document.getElementById('originalMessageContent').textContent = originalMessage;
+                displayUserInfo(userData);
                 createCategorizedMenu(userData);
 
             } catch (e) {
-                document.getElementById('originalMessageContent').textContent = 'Hata: Geçersiz veya bozuk link.\n\nDetay: ' + e.message;
+                const userInfoContainer = document.getElementById('userInfoContainer');
+                userInfoContainer.innerHTML = `<p class="error">Hata: Geçersiz veya bozuk link.<br>Detay: ${e.message}</p>`;
                 document.getElementById('allMessagesContainer').style.display = 'none';
             }
         });
+
+        function displayUserInfo(userData) {
+            const userInfoContainer = document.getElementById('userInfoContainer');
+            const { username, password, generalDns, expirationDate } = userData;
+
+            let userInfoHtml = `
+                <p><strong>Username / Kullanıcı Adı:</strong> <code>${username}</code></p>
+                <p><strong>Password / Şifre:</strong> <code>${password}</code></p>
+                <p><strong>DNS / URL:</strong> <code>http://${generalDns}</code></p>
+            `;
+
+            if (expirationDate) {
+                userInfoHtml += `<p><strong>Bitiş Tarihi:</strong> <code>${expirationDate}</code></p>`;
+            }
+
+            userInfoContainer.innerHTML = userInfoHtml;
+        }
 
         function createCategorizedMenu(userData) {
             const { username, password, expirationDate, generalBaseUrl, generalDns, smartersProDns } = userData;
@@ -139,7 +180,7 @@
             const whatsappText = `\n \nWHATSAPP TOPLULUK GRUBUMUZA KATILARAK DUYURULAR VE ÇALIŞMALAR HAKKINDA HABERDAR OLABİLİRSİNİZ.\nhttps://whatsapp.com/channel/0029VbAvizuElah2ae2O8b2V`;
             const urlWarning = `\n\n Lütfen URL'nin başına dikkat edin. *https* olduysa *http* olarak düzeltin!`;
             const topWarning = `*LÜTFEN BU MESAJI KAYBETMEYİN*\n\n`;
-
+            
             const templates = {
                 "Smart TV 📺": {
                     'SmartersPro': topWarning + `*SMARTERS PRO UYGULAMASI İÇİN*\n1. adım : uygulamaya girin\n2. adım : 1. boşluğa  *heratv* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.\n5. adım : 4. boşluğa *${smartersProDns}* yazın.` + expirationText + urlWarning + whatsappText,
