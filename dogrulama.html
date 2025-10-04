@@ -5,36 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kurulum Dosyaları</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 20px auto; padding: 30px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1, h2 { color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
-        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #f0f4f8; padding: 15px; border-radius: 5px; font-size: 14px; border: 1px solid #ddd; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            line-height: 1.6; 
+            background-color: #f0f2f5; 
+            color: #333; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 20px auto; 
+        }
+        .card {
+            background-color: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        h1, h2 { 
+            color: #1c293b; 
+            border-bottom: 2px solid #eef2f7; 
+            padding-bottom: 10px; 
+            margin-top: 0; 
+        }
+        h2 { font-size: 1.5em; }
+        pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-size: 14px; 
+            border: 1px solid #dee2e6; 
+        }
         .error { color: #d93025; font-weight: bold; }
+
+        /* --- KATEGORİ VE KART TASARIMI --- */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        .category-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .category-card h3 {
+            font-size: 1.3em;
+            margin-top: 0;
+            color: #1c293b;
+            border-bottom: 1px solid #eef2f7;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
         
         /* --- AKORDİYON MENÜ STİLLERİ --- */
         .accordion-header {
-            background-color: #007bff;
-            color: white;
-            padding: 15px;
+            background-color: #f8f9fa;
+            color: #343a40;
+            padding: 12px 15px;
             cursor: pointer;
             border-radius: 5px;
-            margin-top: 10px;
+            margin-top: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.1em;
-            transition: background-color 0.3s;
+            font-size: 1em;
+            font-weight: 500;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s;
         }
-        .accordion-header:hover { background-color: #0056b3; }
-        .accordion-header::after { content: '+'; font-size: 1.5em; }
+        .accordion-header:hover, .accordion-header.active { 
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .accordion-header::after { content: '+'; font-size: 1.4em; }
         .accordion-header.active::after { content: '−'; }
         .accordion-content {
             padding: 0 18px;
             background-color: white;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            border: 1px solid #ddd;
+            transition: max-height 0.4s ease-in-out;
+            border: 1px solid #dee2e6;
             border-top: none;
             border-radius: 0 0 5px 5px;
         }
@@ -42,14 +102,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>Gönderilen Orijinal Mesaj</h1>
-        <pre id="originalMessageContent">Yükleniyor...</pre>
-    </div>
+        <div class="card">
+            <h1>Gönderilen Orijinal Mesaj</h1>
+            <pre id="originalMessageContent">Yükleniyor...</pre>
+        </div>
 
-    <div class="container" id="allMessagesContainer">
-        <h2>Tüm Kurulum Dosyaları</h2>
-        <p>İlgili uygulama veya platformun üzerine tıklayarak kurulum metnini görüntüleyebilirsiniz.</p>
-        <div id="accordionWrapper"></div>
+        <div class="card" id="allMessagesContainer">
+            <h2>Tüm Kurulum Dosyaları</h2>
+            <p>İlgili platformun altından uygulama ismine tıklayarak kurulum metnini görüntüleyebilirsiniz.</p>
+            <div class="category-grid" id="categoryWrapper"></div>
+        </div>
     </div>
 
     <script>
@@ -62,7 +124,7 @@
                 const { originalMessage, userData } = decodedData;
 
                 document.getElementById('originalMessageContent').textContent = originalMessage;
-                createAccordionMenu(userData);
+                createCategorizedMenu(userData);
 
             } catch (e) {
                 document.getElementById('originalMessageContent').textContent = 'Hata: Geçersiz veya bozuk link.\n\nDetay: ' + e.message;
@@ -70,68 +132,77 @@
             }
         });
 
-        function createAccordionMenu(userData) {
+        function createCategorizedMenu(userData) {
             const { username, password, expirationDate, generalBaseUrl, generalDns, smartersProDns } = userData;
 
             const expirationText = expirationDate ? `\n\nBitiş süreniz: *${expirationDate}*` : '';
             const whatsappText = `\n \nWHATSAPP TOPLULUK GRUBUMUZA KATILARAK DUYURULAR VE ÇALIŞMALAR HAKKINDA HABERDAR OLABİLİRSİNİZ.\nhttps://whatsapp.com/channel/0029VbAvizuElah2ae2O8b2V`;
             const urlWarning = `\n\n Lütfen URL'nin başına dikkat edin. *https* olduysa *http* olarak düzeltin!`;
             const topWarning = `*LÜTFEN BU MESAJI KAYBETMEYİN*\n\n`;
-            
-            const fullTemplates = {
-                // --- Smart TV ---
-                'SmartersPro (Smart TV)': topWarning + `*SMARTERS PRO UYGULAMASI İÇİN*\n1. adım : uygulamaya girin\n2. adım : 1. boşluğa  *heratv* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.\n5. adım : 4. boşluğa *${smartersProDns}* yazın.` + expirationText + urlWarning + whatsappText,
-                'Next Xtream Codes': topWarning + `*NEXT CİHAZI XTREAM CODES UYGULAMASI İÇİN*\n 1. adım : Tip= *Xtream* olacak.\n 2. adım : Şema= *http://* olacak.  \n 3. adım : URL= *${generalDns}* olacak.\n 4. adım : Port= *00080* olacak.\n 5. adım : Kullanıcı adı= *${username}* olacak.\n 6. adım : Şifre= *${password}* olacak.\n 7. adım : Kullanıcı aracısı değiştirilmeyecek.\n 8. adım : Kırmızı tuşa(*Kaydet*) tuşuna basılırsa aktif olacak.` + expirationText + whatsappText,
-                'SmartOne': topWarning + `*SMARTONE UYGULAMASI İÇİN*\n 1. adım : *https://smartone-iptv.com/plugin/smart_one/main_generate* sitesine girin.\n 2. adım : *M3U Playlist* seçeneğini seçin.  \n 3. adım : Uygulamaya girdikten sonra *Settings->İnfo* diyin. Ardından *Mac* yazan yeri sitede *TV Mac* yerine yazın. \n 4. adım : *Playlist Name* yazan yere *Heratv* yazın.\n 5. adım : *Playlist M3u* yazan yere *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=ts* yapıştırın.\n 6. adım : *EPG Url* yazan yer boş kalacak. Ellemeyin.\n 7. adım : *Note(optional)* yazan yer boş kalacak.\n 8. adım : *Add Playlist* dedikten sonra kaydolmuş olacak.\n 9. adım : Tekrar uygulamaya girdiğinizde Reload(Tekrar Yükle) dedikten sonra kullanabilirsiniz.\n 10. adım : Channels = Canlı yayınlar, Movies = Filmler, Series = Diziler.` + expirationText + urlWarning + whatsappText,
-                'SSIPTV': topWarning + `*SSİPTV UYGULAMASI İÇİN*\n 1. adım : Uygulamaya girin ve sağ üstten ayarlara gidin. Ardından *get code(kod al)* seçeneğine tıklayın.\n 2. adım : *https://ss-iptv.com/en/users/playlist* sitesine girin.\n 3. adım : Siteye girince sağ tarafta *Enter Connection Code* yazan yere *1.adımda* aldığınız kodu yazın. Ardından *ADD DEVICE* diyin.\n 4. adım : gelen ekranda *External Playlist* seçeneğine tıklayın.\n 5. adım : *ADD ITEM* seçeneğine tıklayın.\n 6. adım : Gelen ekranda *Playlist Name* yerine *HERATV* yazın.\n 7. adım : *URL* yerine *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=ts* yapıştırın.\n 8. adım : Onaylayın ardından *SAVE* butonuna basın. \n 9. adım : Televizyonda *SSİPTV* uygulamasından çıkış yapıp girdiğinizde *HERATV* Playlistini göreceksiniz.` + expirationText + urlWarning + whatsappText,
-                'Hot IPTV': topWarning + `*HOT İPTV UYGULAMASI İÇİN*\n 1. adım : *https://hotplayer.app/upload* sitesine gidin.\n 2. adım : Televizyonda uygulamaya girince ekranın alt kısmında *Your MAC:* kısmında *Mac adresiniz* bulunacak. \n 3. adım : Sitede *Your MAC Address* yazan yere bu *mac adresini* yazın ve *Next* diyin.\n 4. adım : gelen ekranda *Source* kısmından *Link* seçeneğini seçin.\n 5. adım : *Link* yerine *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=ts* yapıştırın.\n 6. adım : *Playlist Name* yerine *HERATV* yazın.\n 7. adım : *Save* diyin. \n 8.adım : Ardından Televizyonda uygulamada *Reload(Yeniden Yükle)* yazan yere tıkladığınızda kanallar yüklenecek.` + expirationText + urlWarning + whatsappText,
-                
-                // --- Android ---
-                'IPTV Stream Player (Android)': topWarning + `*İPTV STREAM PLAYER UYGULAMASI İÇİN*\n1. adım : *LOGIN WİTH NEW USER ACCOUNT* seçeneğini seçin(soldan birinci).\n2. adım : 1. boşluğa *${username}* yazın.\n3. adım : 2. boşluğa *${password}* yazın.\n4. adım : 3. boşluğa *http://${generalDns}* yazın.\n5. adım : Login diyin.` + expirationText + urlWarning + whatsappText,
-                'XCIPTV (Android)': topWarning + `*XCIPTV UYGULAMASI İÇİN*\n1. adım : 1. boşluğa *http://${generalDns}* yazın.\n2. adım : 2. boşluğa *${username}* yazın.\n3. adım : 3. boşluğa *${password}* yazın.\n4. adım : giriş yaptıktan sonra eğer izin isterse lütfen izin verin.` + expirationText + urlWarning + whatsappText,
-                '9XTREAM / XP / ULTRA XP': topWarning + `*9XTREAM / XP PLAYER / ULTRA XP IPTV UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve *add xtream codes api* seçeneğine tıklayın.\n2. adım : 1. boşluğa *heratv* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.\n5. adım : 4. boşluğa *http://${generalDns}* yazın.` + expirationText + urlWarning + whatsappText,
-                'Televizo': topWarning + `*TELEVİZO UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve *yeni liste oluştur* diyin.\n2. adım: *add xtream codes api* seçeneğine tıklayın.\n3. adım : 1. boşluğa *heratv* yazın.\n4. adım : 2. boşluğa *${username}* yazın.\n5. adım : 3. boşluğa *${password}* yazın.\n6. adım : 4. boşluğa *http://${generalDns}* yazın.\n7. adım : sağ üstte *tik* işaretine basın.` + expirationText + urlWarning + whatsappText,
-                'Chopin': topWarning + `*CHOPIN UYGULAMASI İÇİN*\n1. adım : https://tinyurl.com/chopinv3 link üzerinden uygulamamızı indirin.\n2. adım : 1. boşluğa heratv yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.` + expirationText + whatsappText,
-                'TiviMate': topWarning + `*TIVIMATE UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve  *xtream codes* seçeneğini seçin.\n2. adım : 1. boşluğa *http://${generalDns}* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.` + expirationText + urlWarning + whatsappText,
-                'Chopin v3 (Downloader)': topWarning + `*CHOPIN TV UYGULAMASI İÇİN*\n1. adım : PLay Store üzerinden *Downloader* uygulamasını indirin.\n2. adım : *Downloader* uygulamasına girdikten sonra arama yerine *https://tinyurl.com/chopinv3* yazın.\n 3. adım: *indir* butonuna basarak uygulamanın apk'sını indirin ve kurun. \n 4. adım : Uygulamaya girdikten sonra 1. boşluğa *Heratv* ,2. boşluğa *${username}* yazın.\n5. adım : 3. boşluğa *${password}* yazın.` + expirationText + whatsappText,
-                
-                // --- iPhone ---
-                'Smarters Player Lite (iPhone)': topWarning + `*SMARTERS PLAYER LİTE UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve *xtream codes* seçeneğini seçin.\n2. adım : 1. boşluğa  *heratv* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.\n5. adım : 4. boşluğa *http://${generalDns}* yazın.` + expirationText + urlWarning + whatsappText,
-                'Cloud Stream Player (iPhone)': topWarning + `*CLOUD STREAM PLAYER UYGULAMASI İÇİN*\n1. adım : Playlist name yazan yere *Heratv* yazın.\n2. adım : Playlist URL yazan yere  *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=hls* yazın.` + expirationText + urlWarning + whatsappText,
 
-                // --- PC ---
-                'IPTV Smart Expert (PC)': topWarning + `*İPTV SMART EXPERT UYGULAMASI İÇİN*\n 1. adım : MİCROSOFT STORE'a girin ve *İptv smart expert* uygulamasını indirin.\n 2. adım : uygulamaya girin ve  *xtream codes* seçeneğini seçin.  \n 3. adım : 1. boşluğa  *heratv* yazın.\n 4. adım : 2. boşluğa *http://${generalDns}* yazın.\n 5. adım : 3. boşluğa *${username}* yazın.\n 6. adım : 4. boşluğa *${password}* yazın.` + expirationText + urlWarning + whatsappText,
-                'Choppin PC': topWarning + `*CHOPPİN PC UYGULAMASI İÇİN*\n 1. adım : http://tinyurl.com/herabilgisayar link üzerinden uygulamamızı indirin.\n 2. adım : Kurulum yaptıktan sonra gelen ekranda kullanıcı adı yerine *${username}* yazın.\n 3. adım : Şifre yerine *${password}* yazın.\n 4. adım : Beni hatırla seçeneğini işaretleyerek kullanıcı adı ve şifrenizi kaydedebilirsiniz.\n 5. adım : Giriş yap diyerek uygulamayı kullanabilirsiniz.` + expirationText + whatsappText,
-                'VLC Player / QMPlay2 (PC)': topWarning + `*VLC PLAYER & QMPLAY2 İÇİN M3U LİNKİ*\n *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=hls*` + expirationText + urlWarning + whatsappText,
-                
-                // --- Diğer ---
-                'Parçalı Bilgiler': topWarning + `*username/kullanıcı adı* = ${username}\n*password/şifre* = ${password}\n*url/dns* = http://${generalDns}` + expirationText + urlWarning + whatsappText,
+            const templates = {
+                "Smart TV 📺": {
+                    'SmartersPro': topWarning + `*SMARTERS PRO UYGULAMASI İÇİN*\n1. adım : uygulamaya girin\n2. adım : 1. boşluğa  *heratv* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.\n5. adım : 4. boşluğa *${smartersProDns}* yazın.` + expirationText + urlWarning + whatsappText,
+                    'Next Xtream Codes': topWarning + `*NEXT CİHAZI XTREAM CODES UYGULAMASI İÇİN*\n 1. adım : Tip= *Xtream* olacak.\n 2. adım : Şema= *http://* olacak.  \n 3. adım : URL= *${generalDns}* olacak.\n 4. adım : Port= *00080* olacak.\n 5. adım : Kullanıcı adı= *${username}* olacak.\n 6. adım : Şifre= *${password}* olacak.\n 7. adım : Kullanıcı aracısı değiştirilmeyecek.\n 8. adım : Kırmızı tuşa(*Kaydet*) tuşuna basılırsa aktif olacak.` + expirationText + whatsappText,
+                    'SmartOne': topWarning + `*SMARTONE UYGULAMASI İÇİN*\n 1. adım : *https://smartone-iptv.com/plugin/smart_one/main_generate* sitesine girin.\n 2. adım : *M3U Playlist* seçeneğini seçin.  \n 3. adım : Uygulamaya girdikten sonra *Settings->İnfo* diyin. Ardından *Mac* yazan yeri sitede *TV Mac* yerine yazın. \n 4. adım : *Playlist Name* yazan yere *Heratv* yazın.\n 5. adım : *Playlist M3u* yazan yere *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=ts* yapıştırın.\n 6. adım : *EPG Url* yazan yer boş kalacak. Ellemeyin.\n 7. adım : *Note(optional)* yazan yer boş kalacak.\n 8. adım : *Add Playlist* dedikten sonra kaydolmuş olacak.\n 9. adım : Tekrar uygulamaya girdiğinizde Reload(Tekrar Yükle) dedikten sonra kullanabilirsiniz.\n 10. adım : Channels = Canlı yayınlar, Movies = Filmler, Series = Diziler.` + expirationText + urlWarning + whatsappText,
+                    'SSIPTV': topWarning + `*SSİPTV UYGULAMASI İÇİN*\n 1. adım : Uygulamaya girin ve sağ üstten ayarlara gidin. Ardından *get code(kod al)* seçeneğine tıklayın.\n 2. adım : *https://ss-iptv.com/en/users/playlist* sitesine girin.\n 3. adım : Siteye girince sağ tarafta *Enter Connection Code* yazan yere *1.adımda* aldığınız kodu yazın. Ardından *ADD DEVICE* diyin.\n 4. adım : gelen ekranda *External Playlist* seçeneğine tıklayın.\n 5. adım : *ADD ITEM* seçeneğine tıklayın.\n 6. adım : Gelen ekranda *Playlist Name* yerine *HERATV* yazın.\n 7. adım : *URL* yerine *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=ts* yapıştırın.\n 8. adım : Onaylayın ardından *SAVE* butonuna basın. \n 9. adım : Televizyonda *SSİPTV* uygulamasından çıkış yapıp girdiğinizde *HERATV* Playlistini göreceksiniz.` + expirationText + urlWarning + whatsappText,
+                    'Hot IPTV': topWarning + `*HOT İPTV UYGULAMASI İÇİN*\n 1. adım : *https://hotplayer.app/upload* sitesine gidin.\n 2. adım : Televizyonda uygulamaya girince ekranın alt kısmında *Your MAC:* kısmında *Mac adresiniz* bulunacak. \n 3. adım : Sitede *Your MAC Address* yazan yere bu *mac adresini* yazın ve *Next* diyin.\n 4. adım : gelen ekranda *Source* kısmından *Link* seçeneğini seçin.\n 5. adım : *Link* yerine *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=ts* yapıştırın.\n 6. adım : *Playlist Name* yerine *HERATV* yazın.\n 7. adım : *Save* diyin. \n 8.adım : Ardından Televizyonda uygulamada *Reload(Yeniden Yükle)* yazan yere tıkladığınızda kanallar yüklenecek.` + expirationText + urlWarning + whatsappText,
+                },
+                "Android 📱": {
+                    'IPTV Stream Player': topWarning + `*İPTV STREAM PLAYER UYGULAMASI İÇİN*\n1. adım : *LOGIN WİTH NEW USER ACCOUNT* seçeneğini seçin(soldan birinci).\n2. adım : 1. boşluğa *${username}* yazın.\n3. adım : 2. boşluğa *${password}* yazın.\n4. adım : 3. boşluğa *http://${generalDns}* yazın.\n5. adım : Login diyin.` + expirationText + urlWarning + whatsappText,
+                    'XCIPTV': topWarning + `*XCIPTV UYGULAMASI İÇİN*\n1. adım : 1. boşluğa *http://${generalDns}* yazın.\n2. adım : 2. boşluğa *${username}* yazın.\n3. adım : 3. boşluğa *${password}* yazın.\n4. adım : giriş yaptıktan sonra eğer izin isterse lütfen izin verin.` + expirationText + urlWarning + whatsappText,
+                    '9XTREAM / XP / ULTRA XP': topWarning + `*9XTREAM / XP PLAYER / ULTRA XP IPTV UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve *add xtream codes api* seçeneğine tıklayın.\n2. adım : 1. boşluğa *heratv* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.\n5. adım : 4. boşluğa *http://${generalDns}* yazın.` + expirationText + urlWarning + whatsappText,
+                    'Televizo': topWarning + `*TELEVİZO UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve *yeni liste oluştur* diyin.\n2. adım: *add xtream codes api* seçeneğine tıklayın.\n3. adım : 1. boşluğa *heratv* yazın.\n4. adım : 2. boşluğa *${username}* yazın.\n5. adım : 3. boşluğa *${password}* yazın.\n6. adım : 4. boşluğa *http://${generalDns}* yazın.\n7. adım : sağ üstte *tik* işaretine basın.` + expirationText + urlWarning + whatsappText,
+                    'Chopin': topWarning + `*CHOPIN UYGULAMASI İÇİN*\n1. adım : https://tinyurl.com/chopinv3 link üzerinden uygulamamızı indirin.\n2. adım : 1. boşluğa heratv yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.` + expirationText + whatsappText,
+                    'TiviMate': topWarning + `*TIVIMATE UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve  *xtream codes* seçeneğini seçin.\n2. adım : 1. boşluğa *http://${generalDns}* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.` + expirationText + urlWarning + whatsappText,
+                    'Chopin v3 (Downloader)': topWarning + `*CHOPIN TV UYGULAMASI İÇİN*\n1. adım : PLay Store üzerinden *Downloader* uygulamasını indirin.\n2. adım : *Downloader* uygulamasına girdikten sonra arama yerine *https://tinyurl.com/chopinv3* yazın.\n 3. adım: *indir* butonuna basarak uygulamanın apk'sını indirin ve kurun. \n 4. adım : Uygulamaya girdikten sonra 1. boşluğa *Heratv* ,2. boşluğa *${username}* yazın.\n5. adım : 3. boşluğa *${password}* yazın.` + expirationText + whatsappText,
+                },
+                "iPhone 📱": {
+                    'Smarters Player Lite': topWarning + `*SMARTERS PLAYER LİTE UYGULAMASI İÇİN*\n1. adım : uygulamaya girin ve *xtream codes* seçeneğini seçin.\n2. adım : 1. boşluğa  *heratv* yazın.\n3. adım : 2. boşluğa *${username}* yazın.\n4. adım : 3. boşluğa *${password}* yazın.\n5. adım : 4. boşluğa *http://${generalDns}* yazın.` + expirationText + urlWarning + whatsappText,
+                    'Cloud Stream Player': topWarning + `*CLOUD STREAM PLAYER UYGULAMASI İÇİN*\n1. adım : Playlist name yazan yere *Heratv* yazın.\n2. adım : Playlist URL yazan yere  *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=hls* yazın.` + expirationText + urlWarning + whatsappText,
+                },
+                "PC 💻": {
+                    'IPTV Smart Expert': topWarning + `*İPTV SMART EXPERT UYGULAMASI İÇİN*\n 1. adım : MİCROSOFT STORE'a girin ve *İptv smart expert* uygulamasını indirin.\n 2. adım : uygulamaya girin ve  *xtream codes* seçeneğini seçin.  \n 3. adım : 1. boşluğa  *heratv* yazın.\n 4. adım : 2. boşluğa *http://${generalDns}* yazın.\n 5. adım : 3. boşluğa *${username}* yazın.\n 6. adım : 4. boşluğa *${password}* yazın.` + expirationText + urlWarning + whatsappText,
+                    'Choppin PC': topWarning + `*CHOPPİN PC UYGULAMASI İÇİN*\n 1. adım : http://tinyurl.com/herabilgisayar link üzerinden uygulamamızı indirin.\n 2. adım : Kurulum yaptıktan sonra gelen ekranda kullanıcı adı yerine *${username}* yazın.\n 3. adım : Şifre yerine *${password}* yazın.\n 4. adım : Beni hatırla seçeneğini işaretleyerek kullanıcı adı ve şifrenizi kaydedebilirsiniz.\n 5. adım : Giriş yap diyerek uygulamayı kullanabilirsiniz.` + expirationText + whatsappText,
+                    'VLC Player / QMPlay2': topWarning + `*VLC PLAYER & QMPLAY2 İÇİN M3U LİNKİ*\n *${generalBaseUrl}/playlist/${username}/${password}/m3u_plus?output=hls*` + expirationText + urlWarning + whatsappText,
+                },
+                "Diğer Araçlar 🔧": {
+                    'Parçalı Bilgiler': topWarning + `*username/kullanıcı adı* = ${username}\n*password/şifre* = ${password}\n*url/dns* = http://${generalDns}` + expirationText + urlWarning + whatsappText,
+                    'Test Linki': topWarning + `Username = *${username}*\nPassword = *${password}*\nUrl = *http://viptest46.xyz:80*\n\nM3u Link = *http://viptest46.xyz:80/playlist/${username}/${password}/m3u_plus?output=hls*` + expirationText + urlWarning + whatsappText,
+                }
             };
 
-            const wrapper = document.getElementById('accordionWrapper');
-            let accordionHtml = '';
-            for (const title in fullTemplates) {
-                accordionHtml += `
-                    <div class="accordion-item">
-                        <div class="accordion-header">${title}</div>
-                        <div class="accordion-content"><pre>${fullTemplates[title]}</pre></div>
+            const wrapper = document.getElementById('categoryWrapper');
+            let gridHtml = '';
+            for (const categoryName in templates) {
+                let accordionHtml = '';
+                for (const appName in templates[categoryName]) {
+                    accordionHtml += `
+                        <div class="accordion-item">
+                            <div class="accordion-header">${appName}</div>
+                            <div class="accordion-content"><pre>${templates[categoryName][appName]}</pre></div>
+                        </div>
+                    `;
+                }
+                gridHtml += `
+                    <div class="category-card">
+                        <h3>${categoryName}</h3>
+                        ${accordionHtml}
                     </div>
                 `;
             }
-            wrapper.innerHTML = accordionHtml;
+            wrapper.innerHTML = gridHtml;
 
             const headers = wrapper.querySelectorAll('.accordion-header');
             headers.forEach(header => {
                 header.addEventListener('click', () => {
                     const isActive = header.classList.contains('active');
                     
-                    // Önce tümünü kapat
                     headers.forEach(h => {
                         h.classList.remove('active');
                         h.nextElementSibling.style.maxHeight = null;
                     });
 
-                    // Eğer zaten aktif değilse, bunu aç
                     if (!isActive) {
                         header.classList.add('active');
                         const content = header.nextElementSibling;
