@@ -25,7 +25,7 @@
             margin-bottom: 25px;
         }
         h1, h2 { 
-            color: #1c293b; 
+            color: #1c2b3b; 
             border-bottom: 2px solid #eef2f7; 
             padding-bottom: 10px; 
             margin-top: 0; 
@@ -120,6 +120,10 @@
             border: 1px solid #dee2e6;
             margin: 15px 0;
         }
+        /* YENİ EKLENEN STİL */
+        .accordion-content pre strong {
+            font-weight: 900; /* Daha belirgin bir kalınlık */
+        }
     </style>
 </head>
 <body>
@@ -146,7 +150,6 @@
 
                 const decodedData = JSON.parse(decodeURIComponent(escape(window.atob(hash))));
                 
-                // Gelen verinin yapısını kontrol et (eski ve yeni sistem için uyumluluk)
                 const data = decodedData.userData ? decodedData.userData : decodedData;
 
                 displayUserInfo(data);
@@ -222,10 +225,14 @@
             for (const categoryName in templates) {
                 let accordionHtml = '';
                 for (const appName in templates[categoryName]) {
+                    
+                    // YENİ EKLENEN SATIR: Asterisk'leri <strong> etiketine çevirir
+                    const formattedHtml = templates[categoryName][appName].replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+
                     accordionHtml += `
                         <div class="accordion-item">
                             <div class="accordion-header">${appName}</div>
-                            <div class="accordion-content"><pre>${templates[categoryName][appName]}</pre></div>
+                            <div class="accordion-content"><pre>${formattedHtml}</pre></div>
                         </div>
                     `;
                 }
